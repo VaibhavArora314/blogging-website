@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import { sign } from "hono/jwt";
-import getPrismaInstance from "../../db";
+import getPrismaInstance from "../../utils/db";
 import { signInSchema, signUpSchema } from "@vaibhav314/blogging-common";
+import { hashPassword, verifyPassword } from "../../utils/hash";
 
 const userRouter = new Hono<{
   Bindings: {
@@ -26,11 +27,13 @@ userRouter.post("/signup", async (c) => {
 
     const { username, email, password } = data;
 
+    const passwordHash = await hashPassword(password);
+
     const user = await prisma.user.create({
       data: {
         username,
         email,
-        passwordHash: password,
+        passwordHash,
       },
       select: {
         id: true,
@@ -75,7 +78,6 @@ userRouter.post("/signin", async (c) => {
       })
     }
 
-
     const { email, password } = data;
 
     const user = await prisma.user.findUnique({
@@ -89,7 +91,12 @@ userRouter.post("/signin", async (c) => {
       return c.json("No such user found!");
     }
 
-    if (user.passwordHash != password) {
+    const isPasswordSame = await verifyPassword(
+      user.passwordHash,
+      password
+    );
+
+    if (isPasswordSame) {
       c.status(401);
       return c.json("Wrong password!");
     }

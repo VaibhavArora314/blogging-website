@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { verify } from "hono/jwt";
-import getPrismaInstance from "../../db";
+import getPrismaInstance from "../../utils/db";
 import {
   createBlogSchema,
   updateBlogSchema,
