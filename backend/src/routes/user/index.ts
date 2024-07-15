@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { sign } from "hono/jwt";
 import getPrismaInstance from "../../db";
+import { signInSchema, signUpSchema } from "@vaibhav314/blogging-common";
 
 const userRouter = new Hono<{
   Bindings: {
@@ -14,8 +15,16 @@ userRouter.post("/signup", async (c) => {
     const prisma = getPrismaInstance(c.env.DATABASE_URL);
 
     const body = await c.req.json();
+    const {success,data,error} = signUpSchema.safeParse(body);
 
-    const { username, email, password } = body;
+    if (!success) {
+      c.status(411);
+      return c.json({
+        error
+      })
+    }
+
+    const { username, email, password } = data;
 
     const user = await prisma.user.create({
       data: {
@@ -57,7 +66,17 @@ userRouter.post("/signin", async (c) => {
 
     const body = await c.req.json();
 
-    const { email, password } = body;
+    const {success,data,error} = signInSchema.safeParse(body);
+
+    if (!success) {
+      c.status(411);
+      return c.json({
+        error
+      })
+    }
+
+
+    const { email, password } = data;
 
     const user = await prisma.user.findUnique({
       where: {

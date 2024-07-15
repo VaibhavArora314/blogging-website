@@ -1,6 +1,11 @@
 import { Hono } from "hono";
 import { verify } from "hono/jwt";
 import getPrismaInstance from "../../db";
+import {
+  createBlogSchema,
+  updateBlogSchema,
+  updateBlogType,
+} from "@vaibhav314/blogging-common";
 
 const blogRouter = new Hono<{
   Bindings: {
@@ -83,9 +88,19 @@ blogRouter.post("/", async (c) => {
   try {
     const prisma = getPrismaInstance(c.env.DATABASE_URL);
 
-    const body = await c.req.json();
-    const { title, content } = body;
     const userId = c.get("userId");
+    const body = await c.req.json();
+
+    const { success, data, error } = createBlogSchema.safeParse(body);
+
+    if (!success) {
+      c.status(411);
+      return c.json({
+        error,
+      });
+    }
+
+    const { title, content } = data;
 
     const blog = await prisma.blog.create({
       data: {
@@ -134,8 +149,8 @@ blogRouter.get("/:id", async (c) => {
     if (!blog) {
       c.status(404);
       return c.json({
-        message: "No such blog exists"
-      })
+        message: "No such blog exists",
+      });
     }
 
     c.status(201);
@@ -157,17 +172,32 @@ blogRouter.put("/:id", async (c) => {
     const id = c.req.param("id");
     const userId = c.get("userId");
     const body = await c.req.json();
-    const { title, content } = body;
+
+    const { success, data, error } = updateBlogSchema.safeParse(body);
+
+    if (!success) {
+      c.status(411);
+      return c.json({
+        error,
+      });
+    }
+
+    const { title, content } = data;
+
+    const updatedData: updateBlogType = {};
+    if (title) {
+      updatedData.title = title;
+    }
+    if (content) {
+      updatedData.content = content;
+    }
 
     const blog = await prisma.blog.update({
       where: {
         id,
         authorId: userId,
       },
-      data: {
-        title,
-        content,
-      },
+      data: updatedData,
     });
 
     c.status(201);
