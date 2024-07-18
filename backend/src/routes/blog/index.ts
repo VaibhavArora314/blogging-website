@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { verify } from "hono/jwt";
 import getPrismaInstance from "../../utils/db";
 import {
   createBlogSchema,
@@ -7,6 +6,7 @@ import {
   updateBlogType,
 } from "@vaibhav314/blogging-common";
 import uploadImage from "../../utils/imageUpload";
+import checkAuthHeader from "../../utils/checkAuthHeader";
 
 const blogRouter = new Hono<{
   Bindings: {
@@ -29,24 +29,16 @@ blogRouter.use("/*", async (c, next) => {
   try {
     const authHeader = c.req.header("Authorization");
 
-    if (!authHeader || authHeader.split(" ")[0] != "Bearer") {
+    const userId = await checkAuthHeader(authHeader,c.env.JWT_SECRET);
+
+    if (!userId) {
       c.status(401);
       return c.json({
         message: "Invalid token/format",
       });
     }
 
-    const token = authHeader.split(" ")[1];
-    const payload = await verify(token, c.env.JWT_SECRET);
-
-    if (!payload || !payload.id) {
-      c.status(401);
-      return c.json({
-        message: "Invalid token/format",
-      });
-    }
-
-    c.set("userId", String(payload?.id));
+    c.set("userId", userId);
     await next();
   } catch (error) {
     c.status(401);

@@ -4,6 +4,7 @@ import getPrismaInstance from "../../utils/db";
 import { signInSchema, signUpSchema } from "@vaibhav314/blogging-common";
 import { hashPassword, verifyPassword } from "../../utils/hash";
 import uploadImage from "../../utils/imageUpload";
+import checkAuthHeader from "../../utils/checkAuthHeader";
 
 const userRouter = new Hono<{
   Bindings: {
@@ -130,5 +131,50 @@ userRouter.post("/signin", async (c) => {
     });
   }
 });
+
+userRouter.get('/me', async (c) => {
+  try {
+    const authHeader = c.req.header("Authorization");
+
+    const userId = await checkAuthHeader(authHeader,c.env.JWT_SECRET);
+
+    if (!userId) {
+      c.status(401);
+      return c.json({
+        message: "Invalid token/format",
+      });
+    }
+
+    const prisma = getPrismaInstance(c.env.DATABASE_URL);
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId
+      }, select: {
+        id: true,
+        email: true,
+        username: true,
+        profilePicture: true,
+      }
+    })
+
+    if (!user) {
+      c.status(404);
+      return c.json({
+        message: "No such user exists!",
+      })
+    }
+
+    c.status(200);
+    return c.json({
+      user
+    })
+  } catch (error) {
+    c.status(500);
+    return c.json({
+      message: "Error fetching user details!",
+    });
+  }
+})
 
 export default userRouter;
