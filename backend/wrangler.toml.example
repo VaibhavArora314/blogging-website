@@ -1,9 +1,11 @@
 name = "blog-backend"
-compatibility_date = "2024-07-15"
+compatibility_date = "2024-07-01"
 
 [vars]
 DATABASE_URL = "Prisma accelerate db url here"
 JWT_SECRET = "secretKeyHere"
+CLOUD_NAME = "cloudinary cloud name here"
+UPLOAD_PRESET_NAME = "unsigned cloudinary upload preset name"
 
 # [[kv_namespaces]]
 # binding = "MY_KV_NAMESPACE"

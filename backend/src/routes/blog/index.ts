@@ -6,11 +6,14 @@ import {
   updateBlogSchema,
   updateBlogType,
 } from "@vaibhav314/blogging-common";
+import uploadImage from "../../utils/imageUpload";
 
 const blogRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
     JWT_SECRET: string;
+    CLOUD_NAME: string;
+    UPLOAD_PRESET_NAME: string;
   };
   Variables: {
     userId: string;
@@ -63,6 +66,8 @@ blogRouter.get("/", async (c) => {
         id: true,
         title: true,
         content: true,
+        bannerImage: true,
+        category: true,
         author: {
           select: {
             id: true,
@@ -89,7 +94,7 @@ blogRouter.post("/", async (c) => {
     const prisma = getPrismaInstance(c.env.DATABASE_URL);
 
     const userId = c.get("userId");
-    const body = await c.req.json();
+    const body = await c.req.parseBody();
 
     const { success, data, error } = createBlogSchema.safeParse(body);
 
@@ -100,13 +105,20 @@ blogRouter.post("/", async (c) => {
       });
     }
 
-    const { title, content } = data;
+    const { title, content, category, image } = data;
+
+    let url = "";
+    if (image) {
+      url = await uploadImage(c.env.CLOUD_NAME,c.env.UPLOAD_PRESET_NAME,image);
+    }
 
     const blog = await prisma.blog.create({
       data: {
         title,
         content,
         authorId: userId,
+        category,
+        bannerImage: url,
       },
     });
 
@@ -116,6 +128,7 @@ blogRouter.post("/", async (c) => {
       blog,
     });
   } catch (error) {
+    console.log(error);
     c.status(500);
     return c.json({
       message: "An unexpected error occurred!",
@@ -137,6 +150,8 @@ blogRouter.get("/:id", async (c) => {
         id: true,
         title: true,
         content: true,
+        bannerImage: true,
+        category: true,
         author: {
           select: {
             id: true,

@@ -1,5 +1,3 @@
-import React from "react";
-
 const blog = {
   title: "Sample Blog Title",
   description:
