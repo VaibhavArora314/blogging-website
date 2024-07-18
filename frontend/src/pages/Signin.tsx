@@ -1,13 +1,28 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Card from "../components/Card";
 import { useMemo, useState } from "react";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import { InputField } from "../utils/types";
+import { signInType } from "@vaibhav314/blogging-common";
+import axios, { AxiosError } from "axios";
+import { useSetRecoilState } from "recoil";
+import { tokenState } from "../store/atoms/auth";
 
 const SignIn = () => {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+  const [inputData, setInputData] = useState<signInType>({
+    email: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState<
+    Partial<
+      signInType & {
+        other: string;
+      }
+    >
+  >({});
+  const setTokenState = useSetRecoilState(tokenState);
+  const navigate = useNavigate();
 
   const fields: InputField[] = useMemo<InputField[]>(
     () => [
@@ -18,7 +33,10 @@ const SignIn = () => {
         placeholder: "name@company.com",
         required: true,
         handleOnChange: (target) => {
-          setEmail(target.value);
+          setInputData((val) => {
+            val.email = target.value;
+            return val;
+          });
         },
       },
       {
@@ -28,15 +46,37 @@ const SignIn = () => {
         placeholder: "••••••••",
         required: true,
         handleOnChange: (target) => {
-          setPassword(target.value);
+          setInputData((val) => {
+            val.password = target.value;
+            return val;
+          });
         },
       },
     ],
-    [setEmail, setPassword]
+    [setInputData]
   );
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    try {
+      const response = await axios.post("/api/v1/user/signin", inputData);
+
+      const data = response.data;
+      const token = data?.token;
+      setTokenState(token);
+      localStorage.setItem("token", token);
+      navigate("/");
+    } catch (error) {
+      const e = error as AxiosError<{
+        error: signInType & {
+          other: string;
+        };
+      }>;
+      setErrors(
+        e.response?.data?.error || {
+          other: "An unexpected error occurred",
+        }
+      );
+    }
   };
 
   return (
@@ -50,20 +90,29 @@ const SignIn = () => {
             Sign in to your account
           </p>
         </div>
-        <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit}>
+        <form
+          className="space-y-4 md:space-y-6"
+          onSubmit={(e) => {
+            e.preventDefault();
+          }}
+        >
           {fields.map((field) => (
-            <Input key={field.id} {...field} error={""} />
+            <Input
+              key={field.id}
+              {...field}
+              error={errors[field.type as keyof signInType] || ""}
+            />
           ))}
-          {/* {errors.other && (
+          {errors.other && (
             <p className="block my-2 text-sm font-medium text-red-400 text-center">
               {errors.other}
             </p>
-          )} */}
+          )}
 
           <Button
             type="submit"
             label={"Sign In"}
-            onClick={() => {}}
+            onClick={handleSubmit}
             fullWidth
             fontBold
           />

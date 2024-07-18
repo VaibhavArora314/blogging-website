@@ -10,6 +10,9 @@ import { RecoilRoot } from "recoil";
 import React from "react";
 import Loader from "./components/Loader";
 
+import axios from "axios";
+axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
+
 function App() {
   return (
     <BrowserRouter>

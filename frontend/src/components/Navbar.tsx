@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Button from "./Button";
+import { useRecoilValue, useSetRecoilState } from "recoil";
+import { isLoggedInState, tokenState } from "../store/atoms/auth";
 // import { ReactComponent as Logo } from "../assets/logo.svg"; // Adjust the path as necessary
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const isLoggedIn = useRecoilValue(isLoggedInState);
+  const setToken = useSetRecoilState(tokenState);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -23,33 +27,21 @@ const Navbar = () => {
     };
   }, []);
 
+  const handleLogout = async () => {
+    setToken(null);
+    localStorage.removeItem("token")
+  }
+
   return (
     <nav className="bg-white p-4 shadow-md sticky top-0 z-10">
       <div className="container mx-auto flex items-center justify-between">
-        <div className="flex items-center space-x-2 z-20">
-          {/* <Logo className="h-8 w-8 text-gray-900" /> */}
-          {/* <svg
-            width="36"
-            height="36"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <rect width="24" height="24" rx="4" fill="#4A5568" />
-            <path
-              d="M12 7V17M7 12H17"
-              stroke="#fff"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg> */}
+        <Link to="/" onClick={() => {setIsOpen(false);}} className="flex items-center space-x-2 z-20">
           <img src="/public/logo.png" alt="Logo" width="36" height="36" />
 
           <span className="text-gray-900 text-md lg:text-md font-bold">
             Blogify
           </span>
-        </div>
+        </Link>
         <div className="flex items-center lg:hidden z-20">
           <button
             onClick={toggleMenu}
@@ -90,23 +82,53 @@ const Navbar = () => {
         >
           <Link
             to="/"
+            onClick={() => {setIsOpen(false);}} 
             className="text-gray-900 text-md lg:text-md font-medium hover:text-gray-700"
           >
             Home
           </Link>
-          <Link
-            to="/new-blog"
+          {isLoggedIn ? (
+            <>
+              <Link
+                to="/new-blog"
+                onClick={() => {setIsOpen(false);}} 
+                className="text-gray-900 text-md lg:text-md font-medium hover:text-gray-700"
+              >
+                Write
+              </Link>
+              <Link
+                to="/profile"
+                onClick={() => {setIsOpen(false);}} 
+                className="text-gray-900 text-md lg:text-md font-medium hover:text-gray-700"
+              >
+                Profile
+              </Link>
+              <Button
+                label="Logout"
+                onClick={() => {
+                  handleLogout();
+                  setIsOpen(false);
+                }} 
+                type="button"
+                fontBold
+              />
+            </>
+          ): (
+            <><Link
+            to="/signin"
+            onClick={() => {setIsOpen(false);}} 
             className="text-gray-900 text-md lg:text-md font-medium hover:text-gray-700"
           >
-            Write
+            Sign in
           </Link>
           <Link
-            to="/profile"
+            to="/signup"
+            onClick={() => {setIsOpen(false);}} 
             className="text-gray-900 text-md lg:text-md font-medium hover:text-gray-700"
           >
-            Profile
-          </Link>
-          <Button label="Logout" onClick={() => {}} type="button" fontBold />
+            Sign up
+          </Link></>
+          ) }
         </div>
       </div>
     </nav>

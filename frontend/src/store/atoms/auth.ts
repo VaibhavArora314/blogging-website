@@ -27,7 +27,7 @@ export const userState = selector({
   },
 });
 
-export const isLoggedIn = selector({
+export const isLoggedInState = selector({
   key: "loggedInState",
   get: async ({ get }) => {
     const token = get(tokenState);
