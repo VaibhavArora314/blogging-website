@@ -22,6 +22,7 @@ const getUserDetails = async (): Promise<IUser | null> => {
 
     return data?.user;
   } catch (error) {
+    localStorage.removeItem("token");
     return null;
   }
 };

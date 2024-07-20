@@ -15,7 +15,6 @@ axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
 
 function App() {
   const {loading,fetchUser} = useAuthState();
-  console.log(axios.defaults.baseURL)
 
   useEffect(() => {
     fetchUser();
