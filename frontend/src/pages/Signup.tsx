@@ -5,9 +5,8 @@ import Input from "../components/Input";
 import Button from "../components/Button";
 import { InputField } from "../utils/types";
 import { signUpType } from "@vaibhav314/blogging-common";
-import { useSetRecoilState } from "recoil";
-import { tokenState } from "../store/atoms/auth";
 import axios, { AxiosError } from "axios";
+import useAuthState from "../state/useAuthState";
 
 const SignUp = () => {
   const [inputData, setInputData] = useState<signUpType>({
@@ -24,7 +23,7 @@ const SignUp = () => {
       }
     >
   >({});
-  const setTokenState = useSetRecoilState(tokenState);
+  const {fetchUser} = useAuthState();
   const navigate = useNavigate();
 
   const fields: InputField[] = useMemo<InputField[]>(
@@ -96,8 +95,8 @@ const SignUp = () => {
 
       const data = response.data;
       const token = data?.token;
-      setTokenState(token);
       localStorage.setItem("token", token);
+      fetchUser();
       navigate("/");
     } catch (error) {
       const e = error as AxiosError<{
@@ -118,6 +117,9 @@ const SignUp = () => {
   return (
     <Card>
       <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
+      <Link to="/" className="flex flex-col justify-center items-center">
+          <img src="/logo.png" alt="Logo" width="42" height="42" />
+        </Link>
         <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl text-center">
           Create your account
         </h1>

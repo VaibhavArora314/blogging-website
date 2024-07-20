@@ -1,14 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Button from "./Button";
-import { useRecoilValue, useSetRecoilState } from "recoil";
-import { isLoggedInState, tokenState } from "../store/atoms/auth";
-// import { ReactComponent as Logo } from "../assets/logo.svg"; // Adjust the path as necessary
+import useAuthState from "../state/useAuthState";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const isLoggedIn = useRecoilValue(isLoggedInState);
-  const setToken = useSetRecoilState(tokenState);
+  const {user,clear} = useAuthState();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -28,17 +25,17 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = async () => {
-    setToken(null);
     localStorage.removeItem("token")
+    clear();
   }
 
   return (
     <nav className="bg-white p-4 shadow-md sticky top-0 z-10">
       <div className="container mx-auto flex items-center justify-between">
         <Link to="/" onClick={() => {setIsOpen(false);}} className="flex items-center space-x-2 z-20">
-          <img src="/public/logo.png" alt="Logo" width="36" height="36" />
+          <img src="/logo.png" alt="Logo" width="36" height="36" />
 
-          <span className="text-gray-900 text-md lg:text-md font-bold">
+          <span className="text-gray-900 text-md lg:text-lg font-bold">
             Blogify
           </span>
         </Link>
@@ -87,7 +84,7 @@ const Navbar = () => {
           >
             Home
           </Link>
-          {isLoggedIn ? (
+          {user && user.id ? (
             <>
               <Link
                 to="/new-blog"

@@ -60,10 +60,13 @@ blogRouter.get("/", async (c) => {
         content: true,
         bannerImage: true,
         category: true,
+        createdAt: true,
+        updatedAt: true,
         author: {
           select: {
             id: true,
             username: true,
+            profilePicture: true
           },
         },
       },
@@ -144,10 +147,13 @@ blogRouter.get("/:id", async (c) => {
         content: true,
         bannerImage: true,
         category: true,
+        createdAt: true,
+        updatedAt: true,
         author: {
           select: {
             id: true,
             username: true,
+            profilePicture: true
           },
         },
       },
