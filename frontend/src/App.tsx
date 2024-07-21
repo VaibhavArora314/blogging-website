@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import Signin from "./pages/Signin";
 import SignUp from "./pages/Signup";
 import Navbar from "./components/Navbar";
@@ -13,21 +13,37 @@ import Profile from "./pages/Profile";
 import Search from "./pages/SearchPage";
 
 import axios from "axios";
+import UnauthorizedRoute from "./components/UnauthorizedRoute";
+import AuthorizedRoute from "./components/AuthorizedRoute";
 axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
 
 function App() {
-  const {loading,fetchUser} = useAuthState();
+  const { loading, fetchUser } = useAuthState();
 
   useEffect(() => {
     fetchUser();
-  },[fetchUser])
+  }, [fetchUser]);
 
-  if (loading) return <Loader />
+  if (loading) return <Loader />;
 
   return (
     <Routes>
-      <Route path="/signin" element={<Signin />} />
-      <Route path="/signup" element={<SignUp />} />
+      <Route
+        path="/signin"
+        element={
+          <UnauthorizedRoute>
+            <Signin />
+          </UnauthorizedRoute>
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          <UnauthorizedRoute>
+            <SignUp />
+          </UnauthorizedRoute>
+        }
+      />
       <Route
         path="/*"
         element={
@@ -36,12 +52,30 @@ function App() {
               <div>
                 <Navbar />
                 <Routes>
-                  <Route path="/profile/:id" element={<Profile isCurrentUser={false} />} />
-                  <Route path="/profile" element={<Profile isCurrentUser={true} />} />
-                  <Route path="/new-blog" element={<NewBlog />} />
+                  <Route
+                    path="/profile/:id"
+                    element={<Profile isCurrentUser={false} />}
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <AuthorizedRoute>
+                        <Profile isCurrentUser={true} />
+                      </AuthorizedRoute>
+                    }
+                  />
+                  <Route
+                    path="/new-blog"
+                    element={
+                      <AuthorizedRoute>
+                        <NewBlog />
+                      </AuthorizedRoute>
+                    }
+                  />
                   <Route path="/blog/:id" element={<Blog />} />
                   <Route path="/search" element={<Search />} />
                   <Route path="/" element={<Home />} />
+                  <Route path="/*" element={<Navigate to="/" />} />
                 </Routes>
               </div>
               <Footer />
