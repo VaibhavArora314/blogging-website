@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { IBlog } from "../utils/types";
 import axios, { AxiosError } from "axios";
+import { formatDate } from "../utils/date";
 
 const Blog = () => {
   const {id} = useParams();
@@ -37,19 +38,19 @@ const Blog = () => {
         {blog.bannerImage && <img
           src={blog.bannerImage}
           alt="Banner"
-          className="w-full h-auto object-cover rounded-lg shadow-md mb-4"
+          className="w-full h-auto max-h-[80vh] object-cover rounded-lg shadow-md mb-4"
         />}
-        <div className="w-full flex justify-start items-center mb-4 gap-2">
+        <Link to={`/profile/${blog.author.id}`} className="w-full flex justify-start items-center mb-4 gap-2">
           <img
-            src={blog.author.profilePicture}
+            src={blog.author.profilePicture || "/images/defaultuser.png"}
             alt={blog.author.username}
             className="w-12 h-12 rounded-full mr-2"
           />
           <div className="text-gray-700 flex flex-col items-start justify-center">
             <p className="text-lg font-medium">{blog.author.username}</p>
-            <p className="text-sm text-gray-500">{blog.createdAt}</p>
+            <p className="text-sm text-gray-500">{formatDate(blog.createdAt)}</p>
           </div>
-        </div>
+        </Link>
         <div className="text-lg text-gray-800 leading-relaxed self-start">
           {blog.content}
         </div>

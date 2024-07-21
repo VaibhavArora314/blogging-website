@@ -4,13 +4,15 @@ import SignUp from "./pages/Signup";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
-import { NewBlog } from "./pages/NewBlog";
+import NewBlog from "./pages/NewBlog";
 import Blog from "./pages/Blog";
 import useAuthState from "./state/useAuthState";
 import Loader from "./components/Loader";
+import { useEffect } from "react";
+import Profile from "./pages/Profile";
+import Search from "./pages/SearchPage";
 
 import axios from "axios";
-import { useEffect } from "react";
 axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
 
 function App() {
@@ -34,10 +36,11 @@ function App() {
               <div>
                 <Navbar />
                 <Routes>
-                  <Route path="/profile/:id" element={<></>} />
-                  <Route path="/profile" element={<></>} />
+                  <Route path="/profile/:id" element={<Profile isCurrentUser={false} />} />
+                  <Route path="/profile" element={<Profile isCurrentUser={true} />} />
                   <Route path="/new-blog" element={<NewBlog />} />
                   <Route path="/blog/:id" element={<Blog />} />
+                  <Route path="/search" element={<Search />} />
                   <Route path="/" element={<Home />} />
                 </Routes>
               </div>

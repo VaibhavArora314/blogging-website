@@ -204,4 +204,58 @@ userRouter.get("/me", async (c) => {
   }
 });
 
+userRouter.get("/profile/:id", async (c) => {
+  try {
+    const userId = c.req.param("id");
+    const prisma = getPrismaInstance(c.env.DATABASE_URL);
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        username: true,
+        profilePicture: true,
+        createdAt: true,
+        blogs: {
+          select: {
+            id: true,
+            title: true,
+            content: true,
+            bannerImage: true,
+            createdAt: true,
+            author: {
+              select: {
+                id: true,
+                username: true,
+                profilePicture: true
+              }
+            }
+          }
+        }
+      },
+    });
+
+    if (!user) {
+      c.status(404);
+      return c.json({
+        message: "No such user exists!",
+      });
+    }
+
+    c.status(200);
+    return c.json({
+      user,
+    });
+  } catch (error) {
+    c.status(500);
+    return c.json({
+      message: "Error fetching user details!",
+    });
+  }
+});
+
+
+
 export default userRouter;

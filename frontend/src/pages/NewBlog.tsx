@@ -1,12 +1,17 @@
 import { useEffect, useRef, useState } from "react";
+import TextEditor from "../components/TextEditor";
+import axios, { AxiosError } from "axios";
+import { useNavigate } from "react-router-dom";
+import { createBlogType } from "@vaibhav314/blogging-common";
 
-export const NewBlog = () => {
+const NewBlog = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [bannerImage, setBannerImage] = useState<File | null>(null);
   const [bannerImagePreview, setBannerImagePreview] = useState<string>("");
-  const [topic, setTopic] = useState("");
   const titleRef = useRef<HTMLTextAreaElement>(null);
+  const navigate = useNavigate();
+  const [error, setError] = useState<Partial<Pick<createBlogType, "title" | "content"> & {image: string, other:string}>>({});
 
   useEffect(() => {
     if (titleRef.current) {
@@ -32,13 +37,37 @@ export const NewBlog = () => {
   };
 
   const handlePublish = async () => {
-    console.log(title, description, bannerImage, topic);
-    // Add your publish logic here, including uploading the image to your server or cloud storage
+    console.log(title, description, bannerImage);
+
+    try {
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("content", description);
+
+      if (bannerImage) formData.append("image", bannerImage);
+
+      const response = await axios.post("/api/v1/blog", formData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      const blogId = response.data?.blog?.id;
+      navigate(`/blog/${blogId}`);
+    } catch (error) {
+      const e = error as AxiosError<{ error: Partial<Pick<createBlogType, "title" | "content"> & {image: string, other:string}> }>;
+      setError(e.response?.data.error || { other: "An unexpected error occurred" });
+    }
   };
 
   return (
     <div className="flex flex-col items-center justify-start w-full p-4 pt-8">
       <div className="container w-full">
+        {error?.other && (
+          <div className="mb-4 text-red-500">
+            {error.other}
+          </div>
+        )}
         <div className="flex justify-between mb-2">
           <h2 className="font-medium text-lg lg:text-2xl">New Post</h2>
           <button
@@ -54,12 +83,11 @@ export const NewBlog = () => {
           className="outline-none block w-full px-0 text-xl lg:text-2xl text-gray-800 border-0 overflow-hidden resize-none mb-2"
           placeholder="Title"
         />
-        <input
-          type="text"
-          onChange={(e) => setTopic(e.target.value)}
-          className="outline-none block w-full py-2 text-lg lg:text-xl text-gray-800 border-0 rounded-md mb-2"
-          placeholder="Topic"
-        />
+        {error.title && (
+          <div className="mb-2 text-red-500">
+            {error.title}
+          </div>
+        )}
         <label
           htmlFor="banner"
           className="font-normal text-lg lg:text-xl text-gray-900"
@@ -74,13 +102,16 @@ export const NewBlog = () => {
           className="outline-none block w-full py-2 text-lg lg:text-xl text-gray-800 border-0 rounded-md mb-2"
         />
         {bannerImagePreview && (
-          // <div className="mt-4">
-            <img
-              src={bannerImagePreview}
-              alt="Banner Preview"
-              className="h-40 rounded-md"
-            />
-          // </div>
+          <img
+            src={bannerImagePreview}
+            alt="Banner Preview"
+            className="h-40 rounded-md"
+          />
+        )}
+                {error?.image && (
+          <div className="mb-2 text-red-500">
+            {error.image}
+          </div>
         )}
 
         <TextEditor
@@ -88,41 +119,14 @@ export const NewBlog = () => {
             setDescription(desc);
           }}
         />
+        {error.content && (
+          <div className="mb-2 text-red-500">
+            {error.content}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-function TextEditor({ onChange }: { onChange: (desc: string) => void }) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
-    onChange(e.target.value);
-  };
-
-  return (
-    <div className="mt-2">
-      <div className="w-full mb-4">
-        <div className="flex items-center justify-between">
-          <div className="my-2 bg-white w-full">
-            <textarea
-              ref={textareaRef}
-              onChange={handleChange}
-              id="editor"
-              rows={1}
-              className="outline-none block w-full px-0 text-lg lg:text-xl text-gray-800 border-0 overflow-hidden resize-none"
-              placeholder="Write article here..."
-              required
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default TextEditor;
+export default NewBlog;

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import getPrismaInstance from "../../utils/db";
 import {
   createBlogSchema,
+  createBlogType,
   updateBlogSchema,
   updateBlogType,
 } from "@vaibhav314/blogging-common";
@@ -29,7 +30,7 @@ blogRouter.use("/*", async (c, next) => {
   try {
     const authHeader = c.req.header("Authorization");
 
-    const userId = await checkAuthHeader(authHeader,c.env.JWT_SECRET);
+    const userId = await checkAuthHeader(authHeader, c.env.JWT_SECRET);
 
     if (!userId) {
       c.status(401);
@@ -52,29 +53,81 @@ blogRouter.get("/", async (c) => {
   try {
     const prisma = getPrismaInstance(c.env.DATABASE_URL);
 
+    const page = parseInt(c.req.query("page") || "") || 1;
+    const limit = parseInt(c.req.query("limit") || "") || 10;
+    const searchQuery = c.req.query("search") || "";
+
+    console.log(searchQuery);
+
+    const skip = (page - 1) * limit;
+
     const blogs = await prisma.blog.findMany({
-      where: {},
+      skip: skip,
+      take: limit,
+      where: {
+        OR: [
+          {
+            title: {
+              contains: searchQuery,
+              mode: "insensitive", // Case-insensitive search
+            },
+          },
+          {
+            content: {
+              contains: searchQuery,
+              mode: "insensitive", // Case-insensitive search
+            },
+          },
+        ],
+      },
       select: {
         id: true,
         title: true,
         content: true,
         bannerImage: true,
-        category: true,
         createdAt: true,
         updatedAt: true,
         author: {
           select: {
             id: true,
             username: true,
-            profilePicture: true
+            profilePicture: true,
           },
         },
+      },
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+      ],
+    });
+
+    const totalBlogs = await prisma.blog.count({
+      where: {
+        OR: [
+          {
+            title: {
+              contains: searchQuery,
+              mode: "insensitive",
+            },
+          },
+          {
+            content: {
+              contains: searchQuery,
+              mode: "insensitive",
+            },
+          },
+        ],
       },
     });
 
     c.status(200);
     return c.json({
       blogs: blogs,
+      page: page,
+      limit: limit,
+      totalPages: Math.ceil(totalBlogs / limit),
+      totalBlogs: totalBlogs,
     });
   } catch (error) {
     c.status(500);
@@ -95,16 +148,28 @@ blogRouter.post("/", async (c) => {
 
     if (!success) {
       c.status(411);
+
+      type errorType = Partial<Pick<createBlogType, "title" | "content"> & {image: string}>;
+      const formattedError: errorType = {};
+
+      error.issues.forEach((issue) => {
+        formattedError[issue.path[0] as keyof errorType] = issue.message;
+      });
+
       return c.json({
-        error,
+        error: formattedError,
       });
     }
 
-    const { title, content, category, image } = data;
+    const { title, content, image } = data;
 
     let url = "";
     if (image) {
-      url = await uploadImage(c.env.CLOUD_NAME,c.env.UPLOAD_PRESET_NAME,image);
+      url = await uploadImage(
+        c.env.CLOUD_NAME,
+        c.env.UPLOAD_PRESET_NAME,
+        image
+      );
     }
 
     const blog = await prisma.blog.create({
@@ -112,7 +177,6 @@ blogRouter.post("/", async (c) => {
         title,
         content,
         authorId: userId,
-        category,
         bannerImage: url,
       },
     });
@@ -146,14 +210,13 @@ blogRouter.get("/:id", async (c) => {
         title: true,
         content: true,
         bannerImage: true,
-        category: true,
         createdAt: true,
         updatedAt: true,
         author: {
           select: {
             id: true,
             username: true,
-            profilePicture: true
+            profilePicture: true,
           },
         },
       },

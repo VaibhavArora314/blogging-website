@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Button from "./Button";
 import useAuthState from "../state/useAuthState";
+import SearchIcon from '@mui/icons-material/Search';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery,setSearchQuery] = useState("");
   const {user,clear} = useAuthState();
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -29,9 +32,15 @@ const Navbar = () => {
     clear();
   }
 
+  const handleSearch = () => {
+    navigate(`/search?query=${searchQuery}`)
+  }
+
   return (
     <nav className="bg-white p-4 shadow-md sticky top-0 z-10">
       <div className="container mx-auto flex items-center justify-between">
+        <span className="flex gap-4 items-center justify-center">
+
         <Link to="/" onClick={() => {setIsOpen(false);}} className="flex items-center space-x-2 z-20">
           <img src="/logo.png" alt="Logo" width="36" height="36" />
 
@@ -39,6 +48,14 @@ const Navbar = () => {
             Blogify
           </span>
         </Link>
+        <input type="text" name="searchQuery" id="searchQuery" placeholder="Seach here..." className="outline-none w-24 md:w-44 lg:w-60 bg-inherit" onChange={e => {setSearchQuery(e.target.value)}} onKeyDown={(e) => {
+          if (e.key == "Enter")
+            handleSearch();  
+        }}/>
+        <span onClick={handleSearch}>
+          <SearchIcon/>
+        </span>
+        </span>
         <div className="flex items-center lg:hidden z-20">
           <button
             onClick={toggleMenu}
@@ -77,28 +94,31 @@ const Navbar = () => {
             isOpen ? "top-16" : "top-[-100vh]"
           } lg:top-0 transition-all duration-300 ease-in-out`}
         >
-          <Link
-            to="/"
-            onClick={() => {setIsOpen(false);}} 
-            className="text-gray-900 text-md lg:text-md font-medium hover:text-gray-700"
-          >
-            Home
-          </Link>
           {user && user.id ? (
             <>
               <Link
                 to="/new-blog"
                 onClick={() => {setIsOpen(false);}} 
-                className="text-gray-900 text-md lg:text-md font-medium hover:text-gray-700"
+                className="text-gray-900 text-md lg:text-md font-medium hover:text-gray-700 flex justify-center items-center gap-2"
               >
                 Write
+                <img
+                src={"/images/write.png"}
+                alt="Profile"
+                className="h-10 w-10 mr-2"
+              />
               </Link>
               <Link
                 to="/profile"
                 onClick={() => {setIsOpen(false);}} 
-                className="text-gray-900 text-md lg:text-md font-medium hover:text-gray-700"
+                className="text-gray-900 text-md lg:text-md font-medium hover:text-gray-700 flex justify-center items-center gap-2"
               >
-                Profile
+                <p className="lg:hidden">Profile</p>
+                <img
+                src={user.profilePicture || "/images/defaultuser.png"}
+                alt="Profile"
+                className="w-10 h-10 rounded-full mr-2"
+              />
               </Link>
               <Button
                 label="Logout"

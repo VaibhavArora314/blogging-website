@@ -3,6 +3,11 @@ export interface IUser {
   username: string;
   email: string;
   profilePicture: string;
+  createdAt: string;
+}
+
+export interface IUserProfile extends IUser {
+  blogs: IBlog[]
 }
 
 export interface IBlog {
@@ -10,7 +15,6 @@ export interface IBlog {
   title: string;
   content: string;
   bannerImage: string;
-  category: string;
   author: IUser;
   createdAt: string,
   updatedAt: string,
