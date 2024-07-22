@@ -1,63 +1,53 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
-const topBlogsList = [
-  {
-    id: 1,
-    title:
-      "Blog Post 1 Full nameakbjdjasbdkjalnslkj Blog Post 1 Full nameakbjdjasbdkjalnslkj Blog Post 1 Full nameakbjdjasbdkjalnslkj",
-    description: "This is the start of the description for blog post 1.",
-    date: "July 15, 2024",
-    author: "Author 1",
-    authorPhoto: "https://via.placeholder.com/50",
-    details: "Additional details about the blog post.",
-    category: "Category name",
-  },
-  {
-    id: 2,
-    title: "Blog Post 1",
-    description: "This is the start of the description for blog post 1.",
-    date: "July 15, 2024",
-    author: "Author 1",
-    authorPhoto: "https://via.placeholder.com/50",
-    details: "Additional details about the blog post.",
-    category: "Category name",
-  },
-  {
-    id: 3,
-    title: "Blog Post 1",
-    description: "This is the start of the description for blog post 1.",
-    date: "July 15, 2024",
-    author: "Author 1",
-    authorPhoto: "https://via.placeholder.com/50",
-    details: "Additional details about the blog post.",
-    category: "Category name",
-  },
-];
+import { IBlog } from "../utils/types";  
+import axios from "axios";
+import { formatDate } from "../utils/date";
 
 const TopPicks = () => {
+  const [topBlogs, setTopBlogs] = useState<IBlog[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchTopBlogs = async () => {
+    try {
+      const response = await axios.get('/api/v1/blog?order=like&limit=5');
+      setTopBlogs(response.data?.blogs || []);
+    } catch (error) {
+      setTopBlogs([]);
+      console.log(error);
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    fetchTopBlogs();
+  }, [])
+
+  if (loading) return "Loading...";
+
   return (
     <div className="p-4 mb-2">
       <h2 className="text-xl font-semibold text-gray-900 mb-4">Trending Blogs</h2>
       <div className="flex flex-col">
-        {topBlogsList.map((blog, index) => (
+        {topBlogs.map((blog, index) => (
           <div key={index} className="mb-4">
-            <span className="flex items-center mb-1">
-              <Link to="/author/1">
+            <span className="flex items-center mb-1 gap-1">
+              <Link to={`/profile/${blog.author.id}`}>
                 <img
-                  src={blog.authorPhoto}
-                  alt={blog.author}
-                  className="w-6 h-6 rounded-full mr-2"
+                  src={blog.author.profilePicture || "/images/defaultuser.png"}
+                  alt={blog.author.username}
+                  className="w-6 h-6 rounded-full"
                 />
               </Link>
               <p className="text-sm font-normal">
-                <Link to="/author/1" className="font-medium">
-                  {blog.author}
-                </Link>{" "}
-                on{" "}
-                <Link to={`/category/${blog.category}`} className="font-medium">
-                  {blog.category}
+                <Link to={`/profile/${blog.author.id}`} className="font-medium">
+                  {blog.author.username}
                 </Link>
               </p>
+                <span className="hidden sm:inline">•</span>
+            <p className="text-sm lg:text-md text-gray-500">
+              {formatDate(blog.createdAt)}
+            </p>
             </span>
             <Link
               to={`/blog/${blog.id}`}
@@ -70,7 +60,7 @@ const TopPicks = () => {
           </div>
         ))}
       </div>
-      <Link to="/trending" className="font-medium text-md text-green-600">See more</Link>
+      <Link to="/search?order=like" className="font-medium text-md text-green-600">See more</Link>
     </div>
   );
 };

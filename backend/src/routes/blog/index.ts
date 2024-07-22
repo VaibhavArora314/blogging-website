@@ -52,6 +52,7 @@ blogRouter.get("/", async (c) => {
     const page = parseInt(c.req.query("page") || "") || 1;
     const limit = parseInt(c.req.query("limit") || "") || 10;
     const searchQuery = c.req.query("search") || "";
+    const orderBy = c.req.query("order") === "like" ? "totalLikes" : "createdAt";
 
     const skip = (page - 1) * limit;
 
@@ -63,13 +64,13 @@ blogRouter.get("/", async (c) => {
           {
             title: {
               contains: searchQuery,
-              mode: "insensitive", // Case-insensitive search
+              mode: "insensitive",
             },
           },
           {
             content: {
               contains: searchQuery,
-              mode: "insensitive", // Case-insensitive search
+              mode: "insensitive",
             },
           },
         ],
@@ -92,7 +93,7 @@ blogRouter.get("/", async (c) => {
       },
       orderBy: [
         {
-          createdAt: "desc",
+          [orderBy]: "desc",
         },
       ],
     });
