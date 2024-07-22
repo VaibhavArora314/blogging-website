@@ -23,24 +23,19 @@ const blogRouter = new Hono<{
 }>();
 
 blogRouter.use("/*", async (c, next) => {
-  if (c.req.method == "GET") {
-    await next();
-    return;
-  }
-
   try {
     const authHeader = c.req.header("Authorization");
 
     const userId = await checkAuthHeader(authHeader, c.env.JWT_SECRET);
 
-    if (!userId) {
+    if (!userId && c.req.method != "GET") {
       c.status(401);
       return c.json({
         message: "Invalid token/format",
       });
     }
 
-    c.set("userId", userId);
+    if (userId) c.set("userId", userId);
     await next();
   } catch (error) {
     c.status(401);
@@ -93,6 +88,7 @@ blogRouter.get("/", async (c) => {
             profilePicture: true,
           },
         },
+        totalLikes: true,
       },
       orderBy: [
         {
@@ -130,6 +126,7 @@ blogRouter.get("/", async (c) => {
     });
   } catch (error) {
     c.status(500);
+    console.log(error);
     return c.json({
       message: "An unexpected error occurred!",
     });
@@ -213,6 +210,7 @@ blogRouter.get("/:id", async (c) => {
         bannerImage: true,
         createdAt: true,
         updatedAt: true,
+        totalLikes: true,
         author: {
           select: {
             id: true,
@@ -228,12 +226,12 @@ blogRouter.get("/:id", async (c) => {
               select: {
                 id: true,
                 username: true,
-                profilePicture: true
-              }
+                profilePicture: true,
+              },
             },
-            createdAt: true
-          }
-        }
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -244,9 +242,25 @@ blogRouter.get("/:id", async (c) => {
       });
     }
 
+    let isLiked = false;
+    const userId = c.get("userId");
+    if (userId) {
+      const like = await prisma.like.findFirst({
+        where: {
+          userId,
+          blogId: id,
+        },
+      });
+
+      if (like) isLiked = true;
+    }
+
     c.status(201);
     return c.json({
-      blog,
+      blog: {
+        ...blog,
+        isLiked,
+      },
     });
   } catch (error) {
     c.status(500);
@@ -317,7 +331,7 @@ blogRouter.post("/:id/comment", async (c) => {
       c.status(411);
       return c.json({
         error: {
-          content: error.errors[0].message
+          content: error.errors[0].message,
         },
       });
     }
@@ -333,7 +347,7 @@ blogRouter.post("/:id/comment", async (c) => {
     if (!blog) {
       c.status(411);
       return c.json({
-        error: {other: "No such blog exists"},
+        error: { other: "No such blog exists" },
       });
     }
 
@@ -341,8 +355,9 @@ blogRouter.post("/:id/comment", async (c) => {
       data: {
         content,
         authorId: userId,
-        blogId
-      }, select: {
+        blogId,
+      },
+      select: {
         id: true,
         content: true,
         createdAt: true,
@@ -350,11 +365,11 @@ blogRouter.post("/:id/comment", async (c) => {
           select: {
             id: true,
             username: true,
-            profilePicture: true
-          }
-        }
-      }
-    })
+            profilePicture: true,
+          },
+        },
+      },
+    });
 
     c.status(201);
     return c.json({
@@ -363,7 +378,67 @@ blogRouter.post("/:id/comment", async (c) => {
   } catch (error) {
     c.status(500);
     return c.json({
-      error: {other: "An unexpected error occurred!"},
+      error: { other: "An unexpected error occurred!" },
+    });
+  }
+});
+
+blogRouter.post("/:id/like", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const userId = c.get("userId");
+    const prisma = getPrismaInstance(c.env.DATABASE_URL);
+
+    // Check if the user has already liked the post
+    const existingLike = await prisma.like.findFirst({
+      where: {
+        blogId: id,
+        userId: userId,
+      },
+    });
+
+    if (existingLike) {
+      await prisma.like.delete({
+        where: {
+          id: existingLike.id
+        },
+      });
+
+      const updatedBlog = await prisma.blog.update({
+        where: { id },
+        data: { totalLikes: { decrement: 1 } },
+      });
+
+      c.status(200);
+      return c.json({
+        message: "Successfully Unliked!",
+        totalLikes: updatedBlog.totalLikes,
+        isLiked: false,
+      });
+    } else {
+      await prisma.like.create({
+        data: {
+          blogId: id,
+          userId: userId,
+        },
+      });
+
+      const updatedBlog = await prisma.blog.update({
+        where: { id },
+        data: { totalLikes: { increment: 1 } },
+      });
+
+      c.status(201);
+      return c.json({
+        message: "Successfully Liked!",
+        totalLikes: updatedBlog.totalLikes,
+        isLiked: true,
+      });
+    }
+  } catch (error) {
+    c.status(500);
+    return c.json({
+      message: "An unexpected error occurred!",
     });
   }
 });

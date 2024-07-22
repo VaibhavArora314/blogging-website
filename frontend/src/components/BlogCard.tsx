@@ -49,7 +49,7 @@ const BlogCard = ({ blog }: BlogCardProps) => {
             </p>
           </Link>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center mt-2 lg:mt-4 w-fit gap-2">
+          <div className="flex flex-row items-center mt-2 lg:mt-4 w-fit gap-2 flex-wrap">
             <Link
               to={`/profile/${blog.author.id}`}
               className="font-medium flex flex-row items-center justify-center"
@@ -65,6 +65,10 @@ const BlogCard = ({ blog }: BlogCardProps) => {
             <p className="text-sm lg:text-md text-gray-500">
               {formatDate(blog.createdAt)}
             </p>
+            <span className="hidden sm:inline">•</span>
+              <p className="text-sm lg:text-md font-normal text-gray-700">
+                {blog.totalLikes} Like(s)
+              </p>
           </div>
         </div>
         {blog.bannerImage && (

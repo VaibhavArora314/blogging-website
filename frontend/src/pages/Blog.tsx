@@ -4,6 +4,8 @@ import { IBlog } from "../utils/types";
 import axios, { AxiosError } from "axios";
 import { formatDate } from "../utils/date";
 import useAuthState from "../state/useAuthState";
+import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
+import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 
 const Blog = () => {
   const { id } = useParams();
@@ -11,11 +13,15 @@ const Blog = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ content?: string; other?: string }>({});
   const [comment, setComment] = useState("");
-  const {user} = useAuthState();
-  
+  const { user } = useAuthState();
+
   const fetchBlog = async () => {
     try {
-      const response = await axios.get(`/api/v1/blog/${id}`);
+      const response = await axios.get(`/api/v1/blog/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        }
+      });
       setBlog(response.data?.blog);
     } catch (error) {
       setBlog(null);
@@ -60,9 +66,35 @@ const Blog = () => {
     }
   };
 
+  const handleLike = async () => {
+    try {
+      if (!user || !user.id) return;
+
+      const response = await axios.post(
+        `/api/v1/blog/${id}/like`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      setBlog((prevBlog) => {
+        if (!prevBlog) return prevBlog;
+        return {
+          ...prevBlog,
+          totalLikes: response.data?.totalLikes,
+          isLiked: response.data?.isLiked,
+        };
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   useEffect(() => {
     fetchBlog();
-  }, [id]);
+  }, []);
 
   if (loading) return <>"Loading..."</>;
 
@@ -86,22 +118,25 @@ const Blog = () => {
             className="w-full h-auto max-h-[80vh] object-cover rounded-lg shadow-md mb-4"
           />
         )}
-        <Link
-          to={`/profile/${blog.author.id}`}
-          className="w-full flex justify-start items-center mb-4 gap-2"
-        >
-          <img
-            src={blog.author.profilePicture || "/images/defaultuser.png"}
-            alt={blog.author.username}
-            className="w-12 h-12 rounded-full mr-2"
-          />
-          <div className="text-gray-700 flex flex-col items-start justify-center">
-            <p className="text-lg font-medium">{blog.author.username}</p>
-            <p className="text-sm text-gray-500">
-              {formatDate(blog.createdAt)}
-            </p>
+        <div className="w-full flex justify-between items-center mb-4">
+          <Link to={`/profile/${blog.author.id}`} className="flex items-center gap-2">
+            <img
+              src={blog.author.profilePicture || "/images/defaultuser.png"}
+              alt={blog.author.username}
+              className="w-12 h-12 rounded-full"
+            />
+            <div className="text-gray-700 flex flex-col items-start justify-center">
+              <p className="text-lg font-medium">{blog.author.username}</p>
+              <p className="text-sm text-gray-500">
+                {formatDate(blog.createdAt)}
+              </p>
+            </div>
+          </Link>
+          <div className="flex items-center gap-2">
+            <p className="text-lg font-medium text-gray-700">{blog.totalLikes}</p>
+            <span onClick={handleLike} className="cursor-pointer">{blog.isLiked ? <ThumbUpAltIcon/>: <ThumbUpOffAltIcon/>}</span>
           </div>
-        </Link>
+        </div>
         <div className="text-lg text-gray-800 leading-relaxed self-start">
           {blog.content}
         </div>
@@ -129,24 +164,32 @@ const Blog = () => {
               </div>
             ))}
           </div>
-          {user && user?.id ? <div className="w-full mt-4">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Add a comment
-            </h3>
-            <textarea
-              className="w-full border rounded p-2 mb-2"
-              rows={4}
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            />
-           <p className="font-normal text-md lg:text-lg text-red-600 mb-2">{error.content}</p>
-            <button
-              className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-              onClick={handleCommentSubmit}
-            >
-              Submit
-            </button>
-          </div>: <Link to="/signin" className="text-lg font-semibold">You must be logged in to comment.</Link>}
+          {user && user?.id ? (
+            <div className="w-full mt-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Add a comment
+              </h3>
+              <textarea
+                className="w-full border rounded p-2 mb-2"
+                rows={4}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              />
+              <p className="font-normal text-md lg:text-lg text-red-600 mb-2">
+                {error.content}
+              </p>
+              <button
+                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                onClick={handleCommentSubmit}
+              >
+                Submit
+              </button>
+            </div>
+          ) : (
+            <Link to="/signin" className="text-lg font-semibold">
+              You must be logged in to comment.
+            </Link>
+          )}
         </div>
       </div>
     </div>

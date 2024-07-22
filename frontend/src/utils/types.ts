@@ -18,6 +18,8 @@ export interface IBlog {
   createdAt: string,
   updatedAt: string,
   comments: IComment[] | null,
+  totalLikes: number,
+  isLiked: boolean
 }
 
 export interface IComment {

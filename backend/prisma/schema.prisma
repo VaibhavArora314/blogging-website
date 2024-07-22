@@ -23,6 +23,7 @@ model User {
   updatedAt      DateTime  @updatedAt
   blogs          Blog[]
   comments       Comment[]
+  likes          Like[]
 }
 
 model Blog {
@@ -36,6 +37,8 @@ model Blog {
   authorId    String
   author      User      @relation(fields: [authorId], references: [id])
   comments    Comment[]
+  totalLikes  Int    @default(0)
+  likes       Like[]
 }
 
 model Comment {
@@ -47,4 +50,15 @@ model Comment {
   blog      Blog     @relation(fields: [blogId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  blogId    String
+  blog      Blog     @relation(fields: [blogId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, blogId])
 }
