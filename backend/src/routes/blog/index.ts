@@ -3,6 +3,7 @@ import getPrismaInstance from "../../utils/db";
 import {
   createBlogSchema,
   createBlogType,
+  createCommentSchema,
   updateBlogSchema,
   updateBlogType,
 } from "@vaibhav314/blogging-common";
@@ -56,8 +57,6 @@ blogRouter.get("/", async (c) => {
     const page = parseInt(c.req.query("page") || "") || 1;
     const limit = parseInt(c.req.query("limit") || "") || 10;
     const searchQuery = c.req.query("search") || "";
-
-    console.log(searchQuery);
 
     const skip = (page - 1) * limit;
 
@@ -149,7 +148,9 @@ blogRouter.post("/", async (c) => {
     if (!success) {
       c.status(411);
 
-      type errorType = Partial<Pick<createBlogType, "title" | "content"> & {image: string}>;
+      type errorType = Partial<
+        Pick<createBlogType, "title" | "content"> & { image: string }
+      >;
       const formattedError: errorType = {};
 
       error.issues.forEach((issue) => {
@@ -219,6 +220,20 @@ blogRouter.get("/:id", async (c) => {
             profilePicture: true,
           },
         },
+        comments: {
+          select: {
+            id: true,
+            content: true,
+            author: {
+              select: {
+                id: true,
+                username: true,
+                profilePicture: true
+              }
+            },
+            createdAt: true
+          }
+        }
       },
     });
 
@@ -284,6 +299,71 @@ blogRouter.put("/:id", async (c) => {
     c.status(500);
     return c.json({
       message: "An unexpected error occurred!",
+    });
+  }
+});
+
+blogRouter.post("/:id/comment", async (c) => {
+  try {
+    const prisma = getPrismaInstance(c.env.DATABASE_URL);
+
+    const blogId = c.req.param("id");
+    const userId = c.get("userId");
+    const body = await c.req.json();
+
+    const { success, data, error } = createCommentSchema.safeParse(body);
+
+    if (!success) {
+      c.status(411);
+      return c.json({
+        error: {
+          content: error.errors[0].message
+        },
+      });
+    }
+
+    const { content } = data;
+
+    const blog = await prisma.blog.findUnique({
+      where: {
+        id: blogId,
+      },
+    });
+
+    if (!blog) {
+      c.status(411);
+      return c.json({
+        error: {other: "No such blog exists"},
+      });
+    }
+
+    const comment = await prisma.comment.create({
+      data: {
+        content,
+        authorId: userId,
+        blogId
+      }, select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        author: {
+          select: {
+            id: true,
+            username: true,
+            profilePicture: true
+          }
+        }
+      }
+    })
+
+    c.status(201);
+    return c.json({
+      comment,
+    });
+  } catch (error) {
+    c.status(500);
+    return c.json({
+      error: {other: "An unexpected error occurred!"},
     });
   }
 });

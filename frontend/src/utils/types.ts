@@ -1,7 +1,6 @@
 export interface IUser {
   id: string;
   username: string;
-  email: string;
   profilePicture: string;
   createdAt: string;
 }
@@ -18,6 +17,14 @@ export interface IBlog {
   author: IUser;
   createdAt: string,
   updatedAt: string,
+  comments: IComment[] | null,
+}
+
+export interface IComment {
+  id: string;
+  content: string;
+  author: IUser;
+  createdAt: string;
 }
 
 export interface InputField {
