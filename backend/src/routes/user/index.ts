@@ -225,6 +225,7 @@ userRouter.get("/profile/:id", async (c) => {
             content: true,
             bannerImage: true,
             createdAt: true,
+            totalLikes: true,
             author: {
               select: {
                 id: true,
