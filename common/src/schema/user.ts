@@ -10,7 +10,7 @@ export const signUpSchema = zod.object({
     .optional()
     .refine((file) => {
       return !file || file.size <= MAX_UPLOAD_SIZE;
-    }, "File Size must be less than 1MB")
+    }, `File Size must be less than ${MAX_UPLOAD_SIZE/(1024*1024)}MB`)
     .refine((file) => {
       return !file || ACCEPTED_FILE_TYPES.includes(file.type);
     }, "File must be a PNG or JPEG or JPG"),
