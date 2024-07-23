@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import BlogCard from "./BlogCard";
 import { IBlog } from "../utils/types";  
 import axios from "axios";
+import Loader from "./Loader";
 
 const BlogList = () => {
   const [blogs, setBlogs] = useState<IBlog[]>([]);
@@ -30,7 +31,7 @@ const BlogList = () => {
     setPage(newPage);
   };
 
-  if (loading) return "Loading...";
+  if (loading) return <Loader />;
 
   return (
     <>

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { IBlog } from "../utils/types";  
 import axios from "axios";
 import { formatDate } from "../utils/date";
+import Loader from "./Loader";
 
 const TopPicks = () => {
   const [topBlogs, setTopBlogs] = useState<IBlog[]>([]);
@@ -23,7 +24,7 @@ const TopPicks = () => {
     fetchTopBlogs();
   }, [])
 
-  if (loading) return "Loading...";
+  if (loading) return <Loader/>;
 
   return (
     <div className="p-4 mb-2">

@@ -6,6 +6,7 @@ import { formatDate } from "../utils/date";
 import useAuthState from "../state/useAuthState";
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
+import Loader from "../components/Loader";
 
 const Blog = () => {
   const { id } = useParams();
@@ -96,7 +97,7 @@ const Blog = () => {
     fetchBlog();
   }, []);
 
-  if (loading) return <>"Loading..."</>;
+  if (loading) return <Loader/>;
 
   if (!blog)
     return (

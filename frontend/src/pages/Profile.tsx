@@ -4,6 +4,7 @@ import { IUserProfile } from "../utils/types";
 import axios from "axios";
 import useAuthState from "../state/useAuthState";
 import { useParams } from "react-router-dom";
+import Loader from "../components/Loader";
 
 interface ProfileProps {
   isCurrentUser: boolean;
@@ -34,9 +35,9 @@ const Profile = ({ isCurrentUser }: ProfileProps) => {
     fetchProfileData();
   }, []);
 
-  if (loading) return "Loading...";
+  if (loading) return <Loader/>;
 
-  if (userNotFound) return <p>User not found</p>;
+  if (userNotFound) return <p className="text-xl font-medium text-center mt-2">User not found</p>;
 
   return (
     <div className="flex flex-col items-center w-full p-4 pt-8">

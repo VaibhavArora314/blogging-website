@@ -3,6 +3,7 @@ import { IBlog } from "../utils/types";
 import { useEffect, useState } from "react";
 import BlogCard from "../components/BlogCard";
 import axios from "axios";
+import Loader from "../components/Loader";
 
 const Search = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -44,7 +45,7 @@ const Search = () => {
     setPage(1);
   };
 
-  if (loading) return "Loading...";
+  if (loading) return <Loader/>;
 
   return (
     <div className="container mx-auto p-4 flex flex-col gap-4 mt-4">
